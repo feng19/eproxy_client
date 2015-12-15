@@ -1,0 +1,7 @@
+.project
+/.rebar
+/.settings
+/deps
+/ebin
+*~
+client.config

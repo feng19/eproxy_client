@@ -1,0 +1,15 @@
+{
+    application,
+    eproxy_client,
+    [
+        {description, "eproxy_client"},
+        {vsn, "0.1.0"},
+        {registered, [
+            epc_sup,
+            %epc_http_sup,
+            epc_socks5_sup
+        ]},
+        {applications, [kernel, stdlib, crypto, ssl]},
+        {mod, {epc_app, []}}
+    ]
+}.
