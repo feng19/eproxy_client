@@ -105,11 +105,10 @@ start_process(Socket, Key) ->
     {ok, RemoteAddr} = application:get_env(eproxy_client, remote_addr),
     case epc_ws_handler:start_link(RemoteAddr,self()) of
         {ok, RemotePid} ->
-            {ok, Target,Port,Address} = find_target(Socket),
+            {ok, Target} = find_target(Socket),
             {ok, Key} = application:get_env(eproxy_client, key),
             EncryptedTarget = epc_crypto:encrypt(Key, Target),
             epc_ws_handler:send(RemotePid, EncryptedTarget),
-            %gen_tcp:send(Socket, <<4:8, 90:8, Port:16, Address:32>>),
             gen_tcp:send(Socket, <<0:8, 16#5a:8, 16#FFFF:16, 16#FFFFFFFF:32>>),
             {ok, RemotePid};
         {error, Error} ->
@@ -123,11 +122,10 @@ find_target(Socket) ->
     if
         Address =< 16#FF ->
             [_UserId, DomainBin, _] = binary:split(Rest, <<0>>, [global]),
-            %% todo 域名服务器
             ?DEBUG(DomainBin),
-            {ok, <<?DOMAIN, Port:16, (byte_size(DomainBin)):8, DomainBin/binary>>,Port,Address};
+            {ok, <<?DOMAIN, Port:16, (byte_size(DomainBin)):8, DomainBin/binary>>};
         true ->
             ?DEBUG(<<Address:32>>),
-            {ok, <<?IPV4, Port:16, Address:32>>,Port,Address}
+            {ok, <<?IPV4, Port:16, Address:32>>}
     end.
 
