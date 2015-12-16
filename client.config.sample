@@ -5,7 +5,8 @@
         {remote_addr, "ws://yourappname.herokuapp.com/ws"},
         %{remote_addr, "ws://127.0.0.1:9090/ws"},
         {local_socks5_port, 7070},
-        {local_http_port, 7171},
+        {local_socks4_port, 7171},
+        {local_http_port, 7272},
         {key, "hehe123654001122"}
     ]    
 }

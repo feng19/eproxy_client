@@ -1,8 +1,8 @@
 -module(eproxy_client).
 -export([
     start/0,
-    debug/1,
-    debug/2
+    debug/3,
+    debug/4
 ]).
 
 start() ->
@@ -10,16 +10,16 @@ start() ->
 
 -ifdef(debug).
 
-debug(Msg) ->
-    io:format("[~p:~p] ~p~n",[?MODULE,?LINE,Msg]).
-debug(Format,Args) ->
-    io:format("[~p:~p] "++Format++"~n",[?MODULE,?LINE|Args]).
+debug(Module,Line,Msg) ->
+    io:format("[~p:~p] ~p~n",[Module,Line,Msg]).
+debug(Module,Line,Format,Args) ->
+    io:format("[~p:~p] "++Format++"~n",[Module,Line|Args]).
 
 -else.
 
-debug(_Msg) ->
+debug(_Module,_Line,_Msg) ->
     ok.
-debug(_Format,_Args) ->
+debug(_Module,_Line,_Format,_Args) ->
     ok.
 
 -endif.

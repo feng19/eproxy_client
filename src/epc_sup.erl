@@ -24,13 +24,31 @@
 start_link() ->
     supervisor:start_link({local, ?SERVER}, ?MODULE, []).
 
+%% socks4
+start_child(socks4,LocalPort) ->
+    {ok, LSock} = gen_tcp:listen(LocalPort, [binary,
+        {ip, {0, 0, 0, 0}},
+        {reuseaddr, true},
+        {active, false},
+        {backlog, 256}]),
+    ChildSpec = {epc_socks4_sup, {epc_socks4_sup, start_link, [LSock]},
+                 permanent, infinity, supervisor, [epc_socks4_sup]},
+    case supervisor:start_child(?SERVER, ChildSpec) of
+        {ok,_Pid} ->
+            epc_socks4_sup:start_child();
+        R ->
+            ?DEBUG("start error:~p",[R]),
+            R
+    end;
+
+%% socks5
 start_child(socks5,LocalPort) ->
     {ok, LSock} = gen_tcp:listen(LocalPort, [binary,
         {ip, {0, 0, 0, 0}},
         {reuseaddr, true},
         {active, false},
         {backlog, 256}]),
-    ChildSpec = {epc_socks5_sup, {epc_socks5_sup, start_link, [LSock,LocalPort]},
+    ChildSpec = {epc_socks5_sup, {epc_socks5_sup, start_link, [LSock]},
                  permanent, infinity, supervisor, [epc_socks5_sup]},
     case supervisor:start_child(?SERVER, ChildSpec) of
         {ok,_Pid} ->
@@ -39,13 +57,15 @@ start_child(socks5,LocalPort) ->
             ?DEBUG("start error:~p",[R]),
             R
     end;
+
+%% http
 start_child(http,LocalPort) ->
     {ok, LSock} = gen_tcp:listen(LocalPort, [binary,
         {ip, {0, 0, 0, 0}},
         {reuseaddr, true},
         {active, once},
         {backlog, 256}]),
-    ChildSpec = {epc_http_sup, {epc_http_sup, start_link, [LSock,LocalPort]},
+    ChildSpec = {epc_http_sup, {epc_http_sup, start_link, [LSock]},
                  permanent, infinity, supervisor, [epc_http_sup]},
     case supervisor:start_child(?SERVER, ChildSpec) of
         {ok,_Pid} ->
@@ -54,6 +74,7 @@ start_child(http,LocalPort) ->
             ?DEBUG("start error:~p",[R]),
             R
     end;
+
 start_child(Scheme,LocalPort) ->
     ?DEBUG({unknow_scheme,Scheme,LocalPort}),
     {false,unknow_scheme}.

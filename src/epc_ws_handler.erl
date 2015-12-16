@@ -22,9 +22,11 @@ start_link(RemoteAddr,LinkPid) ->
     websocket_client:start_link(RemoteAddr, ?MODULE, [LinkPid]).
 
 send(HanderPid,Binary) ->
+    ?DEBUG("hander_pid:~p,send:~p",[HanderPid,Binary]),
     websocket_client:cast(HanderPid, {binary, Binary}).
 
 close(HanderPid) ->
+    ?DEBUG("hander_pid:~p,close",[HanderPid]),
     websocket_client:cast(HanderPid, close).
 
 %% ===================================================================

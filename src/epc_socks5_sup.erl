@@ -3,7 +3,7 @@
 -behaviour(supervisor).
 
 -export([
-    start_link/2,
+    start_link/1,
     start_child/0
 ]).
 
@@ -11,15 +11,15 @@
 -define(SERVER, ?MODULE).
 
 %%===================================================================
-start_link(LSock,LocalPort) ->
-    supervisor:start_link({local, ?SERVER}, ?MODULE, [LSock,LocalPort]).
+start_link(LSock) ->
+    supervisor:start_link({local, ?SERVER}, ?MODULE, [LSock]).
 
 start_child() ->
     supervisor:start_child(?SERVER, []).
 
 %%===================================================================
-init([LSock,LocalPort]) ->
-    Child = {epc_socks5_child, {epc_socks5_child, start_link, [LSock,LocalPort]},
+init([LSock]) ->
+    Child = {epc_socks5_child, {epc_socks5_child, start_link, [LSock]},
              temporary, brutal_kill, worker, [epc_socks5_child]},
 
     Children = [Child],
