@@ -1,0 +1,1 @@
+createobject("wscript.shell").run "erl -pa ebin deps/websocket_client/ebin -config client -s eproxy_client start -noshell",0

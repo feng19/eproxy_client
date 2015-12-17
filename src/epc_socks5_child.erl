@@ -121,7 +121,7 @@ find_target(Socket) ->
     {ok, <<5:8, _Nmethods:8,_Bin/binary>>} = gen_tcp:recv(Socket, 0),
     %todo auth
 
-    gen_tcp:send(Socket, <<5, 0>>),
+    gen_tcp:send(Socket, <<5:8, 0:8>>),
     {ok, <<5:8, 1:8, _Rsv:8, AType:8,Rest/binary>>} = gen_tcp:recv(Socket, 0),
 
     case AType of
