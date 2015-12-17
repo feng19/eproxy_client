@@ -16,8 +16,8 @@ start(_StartType, _StartArgs) ->
             epc_sup:start_child(socks5,Socks5Port),
             Socks4Port = application:get_env(eproxy_client, local_socks4_port, 7171),
             epc_sup:start_child(socks4,Socks4Port),
-            %HttpPort = application:get_env(eproxy_client, local_http_port, 7272),
-            %epc_sup:start_child(http,HttpPort),
+            HttpPort = application:get_env(eproxy_client, local_http_port, 7272),
+            epc_sup:start_child(http,HttpPort),
             io:format("eproxy client start succeed"),
             {ok, Pid};
         Other ->

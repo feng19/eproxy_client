@@ -106,7 +106,6 @@ start_process(Socket, Key) ->
     case epc_ws_handler:start_link(RemoteAddr,self()) of
         {ok, RemotePid} ->
             {ok, Target} = find_target(Socket),
-            {ok, Key} = application:get_env(eproxy_client, key),
             EncryptedTarget = epc_crypto:encrypt(Key, Target),
             epc_ws_handler:send(RemotePid, EncryptedTarget),
             ok = gen_tcp:send(Socket, <<5,0,0,1,0,0,0,0,0,0>>),
