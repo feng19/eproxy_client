@@ -50,8 +50,9 @@ websocket_info(Msg, _ConnState, State) ->
     ?DEBUG(Msg),
     {ok, State}.
 
-websocket_terminate(Reason, _ConnState, State) ->
-    ?DEBUG("Websocket closed in state ~p wih reason ~p",[State, Reason]),
+websocket_terminate(Reason, _ConnState, LinkPid) ->
+    ?DEBUG("Websocket closed in state ~p wih reason ~p",[LinkPid, Reason]),
+    LinkPid ! close,
     ok.
 
 %% ===================================================================

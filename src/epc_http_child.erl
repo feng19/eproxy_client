@@ -83,7 +83,11 @@ handle_info({tcp_closed, _}, State) ->
 
 handle_info({tcp_error, _, Reason}, State) ->
     ?DEBUG("tcp_error stop:~p",[Reason]),
-    {stop, Reason, State}.
+    {stop, Reason, State};
+
+handle_info(close, State) ->
+    ?DEBUG("close"),
+    {stop, normal, State}.
 
 terminate(Reason, #state{socket=Socket, remote_pid=RemotePid}) ->
     ?DEBUG("terminate:~p",[Reason]),

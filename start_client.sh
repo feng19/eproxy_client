@@ -12,8 +12,12 @@ then
     echo "alreay running"
     exit -1
 else
-    #erl -pa ebin deps/*/ebin -config client +K true -s eproxy_client start -detached
-    erl -pa ebin deps/*/ebin -config client +K true -s eproxy_client start
+    if [ "$1" = "-d" ]; then
+        erl -pa ebin deps/*/ebin -config client +K true -s eproxy_client start -detached
+        echo "eproxy client startd!"
+    else
+        erl -pa ebin deps/*/ebin -config client +K true -s eproxy_client start
+    fi
 fi
 
 exit 0
