@@ -1,12 +1,9 @@
-.PHONY: deps 
+PROJECT = eproxy_client
+DEPS = websocket_client
+websocket_client = git https://github.com/jeremyong/websocket_client v0.7
 
-all: deps compile
+#ERLC_OPTS := +debug_info
+ERLC_OPTS := +"{d,debug}"
+ERLC_OPTS := +no_debug_info
 
-deps:
-	@./rebar get-deps 
-    
-compile:
-	@./rebar compile
-
-clean:
-	@./rebar clean
+include erlang.mk

@@ -10,6 +10,7 @@
             epc_socks5_sup
         ]},
         {applications, [kernel, stdlib, crypto, ssl]},
-        {mod, {epc_app, []}}
+        {mod, {epc_app, []}},
+        {modules, []}
     ]
 }.

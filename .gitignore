@@ -5,3 +5,5 @@
 /ebin
 *~
 client.config
+*.d
+/.erlang.mk
