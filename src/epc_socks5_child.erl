@@ -17,7 +17,7 @@
 
 -include("socks_type.hrl").
 -include("debug.hrl").
--define(TIMEOUT, 1000 * 60 * 10).
+-define(TIMEOUT, 1000 * 20).
 
 %%%===================================================================
 start_link(LSock) ->
@@ -25,7 +25,8 @@ start_link(LSock) ->
 
 %%%===================================================================
 init([LSock]) ->
-    ?DEBUG("init LSock:~p",[LSock]),
+%%     ?DEBUG("init LSock:~p",[LSock]),
+%%     process_flag(trap_exit, true),
     {ok, Key} = application:get_env(eproxy_client, key),
     {ok, #state{key=Key,lsock=LSock}, 0}.
 
@@ -51,7 +52,7 @@ handle_info(timeout, #state{key=Key,lsock=LSock,socket=undefined} = State) ->
 %% send by OPT timeout
 handle_info(timeout, #state{socket = Socket} = State) when is_port(Socket) ->
     ?DEBUG("timeout stop"),
-    {stop, timeout, State};
+    {stop, normal, State};
 
 %% recv from client, and send to remote
 handle_info({tcp, Socket, Request}, #state{key=Key, socket=Socket, remote_pid=RemotePid} = State) ->
@@ -130,15 +131,15 @@ find_target(Socket) ->
     case AType of
         ?IPV4 ->
             <<Address:32, Port:16, _/binary>> = Rest,
-            ?DEBUG(<<Address:32>>),
+%%             ?DEBUG(<<Address:32>>),
             {ok, <<?IPV4, Port:16, Address:32>>};
         ?IPV6 ->
             <<Address:128, Port:16, _/binary>> = Rest,
-            ?DEBUG(<<Address:32>>),
+%%             ?DEBUG(<<Address:32>>),
             {ok, <<?IPV6, Port:16, Address:128>>};
         ?DOMAIN ->
             <<DomainLen:8, DomainBin:DomainLen/binary, Port:16,_/binary>> = Rest,
-            ?DEBUG(DomainBin),
+%%             ?DEBUG(DomainBin),
             {ok, <<?DOMAIN, Port:16, DomainLen:8, DomainBin/binary>>}
     end.
 

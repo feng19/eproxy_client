@@ -17,7 +17,7 @@
 
 -include("socks_type.hrl").
 -include("debug.hrl").
--define(TIMEOUT, 1000 * 60 * 10).
+-define(TIMEOUT, 1000 * 20).
 
 
 %%%===================================================================
@@ -28,7 +28,8 @@ start_link(LSock) ->
 
 init([LSock]) ->
     %process_flag(trap_exit, true),
-    ?DEBUG("init LSock:~p",[LSock]),
+%%     ?DEBUG("init LSock:~p",[LSock]),
+%%     process_flag(trap_exit, true),
     {ok, Key} = application:get_env(eproxy_client, key),
     {ok, #state{key = Key, lsock = LSock}, 0}.
 
@@ -49,7 +50,7 @@ handle_info(timeout, #state{socket = Socket} = State) when is_port(Socket) ->
     {stop, timeout, State};
 
 handle_info({tcp, Socket, Request}, #state{key=Key, socket=Socket,remote_pid=undefined} = State) ->
-    ?DEBUG(Request),
+%%     ?DEBUG(Request),
     case connect_to_remote(Key,Socket,Request) of
         {ok, RemotePid} ->
             ok = inet:setopts(Socket, [{active, once}]),
@@ -60,7 +61,7 @@ handle_info({tcp, Socket, Request}, #state{key=Key, socket=Socket,remote_pid=und
     end;
 
 handle_info({tcp, Socket, Request}, #state{key=Key, socket=Socket,remote_pid=RemotePid} = State) ->
-    ?DEBUG(Request),
+%%     ?DEBUG(Request),
     epc_ws_handler:send(RemotePid, epc_crypto:encrypt(Key, Request)),
     {noreply, State, ?TIMEOUT};
 

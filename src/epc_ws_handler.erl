@@ -22,24 +22,26 @@ start_link(RemoteAddr,LinkPid) ->
     websocket_client:start_link(RemoteAddr, ?MODULE, [LinkPid]).
 
 send(HanderPid,Binary) ->
-    ?DEBUG("hander_pid:~p,send:~p",[HanderPid,Binary]),
+%%     ?DEBUG("hander_pid:~p,send:~p",[HanderPid,Binary]),
     websocket_client:cast(HanderPid, {binary, Binary}).
 
 close(HanderPid) ->
     ?DEBUG("hander_pid:~p,close",[HanderPid]),
-    websocket_client:cast(HanderPid, close).
+    exit(HanderPid, normal).
+%%     websocket_client:cast(HanderPid, close).
 
 %% ===================================================================
 
 init([LinkPid], _ConnState) ->
-    ?DEBUG("socket start:~p",[LinkPid]),
+    ?DEBUG("ws handler start:~p",[LinkPid]),
+%%     process_flag(trap_exit, true),
     {ok, LinkPid}.
 
 websocket_handle({pong, _}, _ConnState, State) ->
-    ?DEBUG("pong"),
+%%     ?DEBUG("pong"),
     {ok, State};
 websocket_handle({binary, Binary}, _ConnState, LinkPid) ->
-    ?DEBUG("Received msg ~p~n", [Binary]),
+%%     ?DEBUG("Received msg ~p~n", [Binary]),
     LinkPid ! {websocket_msg,Binary},
     {ok, LinkPid}.
 

@@ -17,7 +17,7 @@
 
 -include("socks_type.hrl").
 -include("debug.hrl").
--define(TIMEOUT, 1000 * 60 * 10).
+-define(TIMEOUT, 1000 * 20).
 
 %%%===================================================================
 start_link(LSock) ->
@@ -25,7 +25,8 @@ start_link(LSock) ->
 
 %%%===================================================================
 init([LSock]) ->
-    ?DEBUG("init LSock:~p",[LSock]),
+%%     ?DEBUG("init LSock:~p",[LSock]),
+%%     process_flag(trap_exit, true),
     {ok, Key} = application:get_env(eproxy_client, key),
     {ok, #state{key=Key,lsock=LSock}, 0}.
 
@@ -125,10 +126,10 @@ find_target(Socket) ->
     if
         Address =< 16#FF ->
             [_UserId, DomainBin, _] = binary:split(Rest, <<0>>, [global]),
-            ?DEBUG(DomainBin),
+%%             ?DEBUG(DomainBin),
             {ok, <<?DOMAIN, Port:16, (byte_size(DomainBin)):8, DomainBin/binary>>};
         true ->
-            ?DEBUG(<<Address:32>>),
+%%             ?DEBUG(<<Address:32>>),
             {ok, <<?IPV4, Port:16, Address:32>>}
     end.
 
