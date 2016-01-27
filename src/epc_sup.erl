@@ -82,5 +82,9 @@ start_child(Scheme,LocalPort) ->
 %%%===================================================================
 init([]) ->
     SupFlags = {one_for_one, 10, 1},
-    {ok, {SupFlags, []}}.
+    ChildSpecs = [
+        {epc_remote_addr_list, {epc_remote_addr_list, start_link, []},
+         permanent, infinity, worker, [epc_remote_addr_list]}
+    ],
+    {ok, {SupFlags, ChildSpecs}}.
 

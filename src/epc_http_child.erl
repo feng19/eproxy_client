@@ -13,12 +13,9 @@
     code_change/3
 ]).
 
--record(state, {key, lsock, socket, remote_pid}).
+-record(state, {lsock, socket, remote_pid}).
 
--include("socks_type.hrl").
--include("debug.hrl").
--define(TIMEOUT, 1000 * 20).
-
+-include("epc.hrl").
 
 %%%===================================================================
 start_link(LSock) ->
@@ -27,11 +24,9 @@ start_link(LSock) ->
 %%%===================================================================
 
 init([LSock]) ->
-    %process_flag(trap_exit, true),
 %%     ?DEBUG("init LSock:~p",[LSock]),
-%%     process_flag(trap_exit, true),
-    {ok, Key} = application:get_env(eproxy_client, key),
-    {ok, #state{key = Key, lsock = LSock}, 0}.
+    process_flag(trap_exit, true),
+    {ok, #state{lsock = LSock}, 0}.
 
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
@@ -45,13 +40,13 @@ handle_info(timeout, #state{lsock = LSock, socket = undefined} = State) ->
     epc_http_sup:start_child(),
     {noreply, State#state{socket = Socket}, ?TIMEOUT};
 
-handle_info(timeout, #state{socket = Socket} = State) when is_port(Socket) ->
-    ?DEBUG("timeout stop"),
-    {stop, timeout, State};
+handle_info(timeout, State) ->
+%%     ?DEBUG("timeout stop"),
+    {stop, normal, State};
 
-handle_info({tcp, Socket, Request}, #state{key=Key, socket=Socket,remote_pid=undefined} = State) ->
+handle_info({tcp, Socket, Request}, #state{socket=Socket,remote_pid=undefined} = State) ->
 %%     ?DEBUG(Request),
-    case connect_to_remote(Key,Socket,Request) of
+    case connect_to_remote(Socket,Request,2) of
         {ok, RemotePid} ->
             ok = inet:setopts(Socket, [{active, once}]),
             {noreply, State#state{remote_pid=RemotePid}, ?TIMEOUT};
@@ -60,15 +55,14 @@ handle_info({tcp, Socket, Request}, #state{key=Key, socket=Socket,remote_pid=und
             {stop, Error, State}
     end;
 
-handle_info({tcp, Socket, Request}, #state{key=Key, socket=Socket,remote_pid=RemotePid} = State) ->
+handle_info({tcp, Socket, Request}, #state{socket=Socket,remote_pid=RemotePid} = State) ->
 %%     ?DEBUG(Request),
-    epc_ws_handler:send(RemotePid, epc_crypto:encrypt(Key, Request)),
+    epc_ws_handler:send(RemotePid,Request),
     {noreply, State, ?TIMEOUT};
 
 %% recv from remote, and send back to client
-handle_info({websocket_msg,Response}, #state{key=Key, socket=Client} = State) ->
-    {ok, RealData} = epc_crypto:decrypt(Key, Response),
-    case gen_tcp:send(Client, RealData) of
+handle_info({websocket_msg,Response}, #state{socket=Client} = State) ->
+    case gen_tcp:send(Client, Response) of
         ok ->
             ok = inet:setopts(Client, [{active, once}]),
             {noreply, State, ?TIMEOUT};
@@ -86,18 +80,12 @@ handle_info({tcp_error, _, Reason}, State) ->
     ?DEBUG("tcp_error stop:~p",[Reason]),
     {stop, Reason, State};
 
-handle_info(close, State) ->
-    ?DEBUG("close"),
+handle_info({'EXIT',RemotePid,Reson}, #state{remote_pid=RemotePid}=State) ->
+    ?DEBUG("exit:~p",[Reson]),
     {stop, normal, State}.
 
-terminate(Reason, #state{socket=Socket, remote_pid=RemotePid}) ->
+terminate(Reason, #state{socket=Socket}) ->
     ?DEBUG("terminate:~p",[Reason]),
-    case is_pid(RemotePid) of
-        true ->
-            epc_ws_handler:close(RemotePid);
-        false ->
-            ok
-    end,
     case is_port(Socket) of
         true -> 
             gen_tcp:close(Socket);
@@ -111,22 +99,23 @@ code_change(_OldVsn, State, _Extra) ->
 
 %%%===================================================================
 
-connect_to_remote(Key,Socket,Request) ->
-    {ok, RemoteAddr} = application:get_env(eproxy_client, remote_addr),
-    case epc_ws_handler:start_link(RemoteAddr,self()) of
+connect_to_remote(Socket,Request,N) ->
+    case epc_ws_handler:start_link(self()) of
         {ok, RemotePid} ->
             case parse_request(Request) of
                 {http, Target, NormalizedReqeust} ->
-                    epc_ws_handler:send(RemotePid, epc_crypto:encrypt(Key, Target)),
-                    epc_ws_handler:send(RemotePid, epc_crypto:encrypt(Key, NormalizedReqeust)),
+                    epc_ws_handler:send(RemotePid,Target),
+                    epc_ws_handler:send(RemotePid,NormalizedReqeust),
                     {ok,RemotePid};
                 {connect,Target} ->
-                    epc_ws_handler:send(RemotePid, epc_crypto:encrypt(Key, Target)),
+                    epc_ws_handler:send(RemotePid,Target),
                     gen_tcp:send(Socket, <<"HTTP/1.1 200 Connection Established\r\n\r\n">>),
                     {ok,RemotePid};
                 {error, Reason} ->
                     {error, Reason}
             end;
+        {error, timeout} when N=/=0 ->
+            connect_to_remote(Socket,Request,N-1);
         {error, Error} ->
             {error, Error}
     end.
