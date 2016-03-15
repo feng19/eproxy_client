@@ -4,14 +4,14 @@
     decrypt/2
 ]).
 
--define(DATALENGTH, 16).
+-define(DATA_LENGTH, 16).
 -define(IV, <<"90de3456asxdfrtg">>).
 
 -spec encrypt(nonempty_string(), binary()) -> <<_:_*8>>.
 encrypt(Key, Binary) ->
     BinaryLength = byte_size(Binary),
-    Rem = (BinaryLength + 4) rem ?DATALENGTH,
-    AdditionalLength = ?DATALENGTH - Rem,
+    Rem = (BinaryLength + 4) rem ?DATA_LENGTH,
+    AdditionalLength = ?DATA_LENGTH - Rem,
 
     FinalBinary = <<BinaryLength:32/integer-big, Binary/binary, 0:AdditionalLength/unit:8>>,
 

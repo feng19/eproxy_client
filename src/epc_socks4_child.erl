@@ -75,8 +75,10 @@ handle_info({tcp_error, _, Reason}, State) ->
     ?DEBUG("tcp_error stop:~p",[Reason]),
     {stop, Reason, State};
 
-handle_info({'EXIT',RemotePid,Reson}, #state{remote_pid=RemotePid}=State) ->
-    ?DEBUG("exit:~p",[Reson]),
+handle_info({'EXIT',RemotePid,normal}, #state{remote_pid=RemotePid}=State) ->
+    {stop, normal, State};
+handle_info({'EXIT',RemotePid,Reason}, #state{remote_pid=RemotePid}=State) ->
+    ?DEBUG("exit:~p",[Reason]),
     {stop, normal, State}.
 
 terminate(Reason, #state{socket=Socket}) ->

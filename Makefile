@@ -1,6 +1,5 @@
+
 PROJECT = eproxy_client
-BUILD_DEPS = reload_mk
-DEP_PLUGINS = reload_mk
 DEPS = websocket_client
 dep_websocket_client = git https://github.com/jeremyong/websocket_client v0.7
 
@@ -13,4 +12,3 @@ ESCRIPT_EMU_ARGS = +K true -config client -escript main eproxy_client
 
 include erlang.mk
 
-#rebar:: rebar.config

@@ -7,6 +7,7 @@
         {registered, [
             epc_sup,
             epc_http_sup,
+            epc_socks4_sup,
             epc_socks5_sup
         ]},
         {applications, [kernel, stdlib, crypto, ssl]},
