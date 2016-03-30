@@ -34,7 +34,7 @@ get_remote_addr() ->
 
 reload_remote_addr_list() ->
     RemoteAddrList = get_remote_addr_list(),
-    gen_server:call(?MODULE, {reload_remote_addr_list,RemoteAddrList}).
+    gen_server:cast(?MODULE, {reload_remote_addr_list,RemoteAddrList}).
 
 %% ====================================================================
 
@@ -70,8 +70,42 @@ code_change(_OldVsn, State, _Extra) ->
 
 set_remote_addr_list(RemoteAddrList) ->
     lists:foldl(
-        fun({_RemoteAddr,_Key}=T,N) ->
-            NewN = N+1,
-            put(NewN,T),
-            NewN
+        fun({RemoteAddr0,Key0},N) ->
+            case {check_url(RemoteAddr0), check_key(Key0)} of
+                {{ok, RemoteAddr}, {ok, Key}} ->
+                    NewN = N+1,
+                    put(NewN,{RemoteAddr, Key}),
+                    NewN;
+                {{error,Error}, _} ->
+                    io:format("url:~p key:~p,url error:~p~n",[RemoteAddr0, Key0, Error]),
+                    N;
+                {_, {error,Error}} ->
+                    io:format("url:~p key:~p,key error:~p~n",[RemoteAddr0, Key0, Error]),
+                    N
+            end
         end, 0, RemoteAddrList).
+
+check_key(Key0) ->
+    case to_binary(Key0) of
+        Key when size(Key)==16 ->
+            {ok, Key};
+        _ ->
+            {error, invalid_key}
+    end.
+
+check_url(URL0) ->
+    URL = to_list(URL0),
+    case http_uri:parse(URL, [{scheme_defaults, [{ws,80},{wss,443}]}]) of
+        {ok, _} ->
+            {ok, to_binary(URL)};
+        Error ->
+            Error
+    end.
+
+to_list(L) when is_list(L) -> L;
+to_list(B) when is_binary(B) -> binary_to_list(B).
+
+to_binary(A) when is_atom(A) -> to_binary(atom_to_list(A));
+to_binary(B) when is_binary(B) -> B;
+to_binary(I) when is_integer(I) -> to_binary(integer_to_list(I));
+to_binary(L) when is_list(L) -> iolist_to_binary(L).

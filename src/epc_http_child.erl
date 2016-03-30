@@ -1,21 +1,11 @@
 -module(epc_http_child).
-
 -behaviour(gen_server).
+-include("epc.hrl").
 
+-export([ init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3 ]).
 -export([start_link/1]).
 
--export([
-    init/1,
-    handle_call/3,
-    handle_cast/2,
-    handle_info/2,
-    terminate/2,
-    code_change/3
-]).
-
 -record(state, {lsock, socket, remote_pid}).
-
--include("epc.hrl").
 
 %%%===================================================================
 start_link(LSock) ->
@@ -35,15 +25,6 @@ handle_cast(close, State) ->
     ?DEBUG("close"),
     {stop, normal, State}.
 
-handle_info(timeout, #state{lsock = LSock, socket = undefined} = State) ->
-    {ok, Socket} = gen_tcp:accept(LSock),
-    epc_http_sup:start_child(),
-    {noreply, State#state{socket = Socket}, ?TIMEOUT};
-
-handle_info(timeout, State) ->
-%%     ?DEBUG("timeout stop"),
-    {stop, normal, State};
-
 handle_info({tcp, Socket, Request}, #state{socket=Socket,remote_pid=undefined} = State) ->
 %%     ?DEBUG(Request),
     case connect_to_remote(Socket,Request,2) of
@@ -54,12 +35,10 @@ handle_info({tcp, Socket, Request}, #state{socket=Socket,remote_pid=undefined} =
             ?DEBUG("error stop:~p",[Error]),
             {stop, Error, State}
     end;
-
 handle_info({tcp, Socket, Request}, #state{socket=Socket,remote_pid=RemotePid} = State) ->
 %%     ?DEBUG(Request),
     epc_ws_handler:send(RemotePid,Request),
     {noreply, State, ?TIMEOUT};
-
 %% recv from remote, and send back to client
 handle_info({websocket_msg,Response}, #state{socket=Client} = State) ->
     case gen_tcp:send(Client, Response) of
@@ -70,19 +49,22 @@ handle_info({websocket_msg,Response}, #state{socket=Client} = State) ->
             ?DEBUG("error stop:~p",[Error]),
             {stop, Error, State}
     end;
-
-
+handle_info(timeout, #state{lsock = LSock, socket = undefined} = State) ->
+    {ok, Socket} = gen_tcp:accept(LSock),
+    epc_http_sup:start_child(),
+    {noreply, State#state{socket = Socket}, ?TIMEOUT};
+handle_info(timeout, State) ->
+%%     ?DEBUG("timeout stop"),
+    {stop, normal, State};
 handle_info({tcp_closed, _}, State) ->
     ?DEBUG("tcp_closed stop"),
     {stop, normal, State};
-
 handle_info({tcp_error, _, Reason}, State) ->
     ?DEBUG("tcp_error stop:~p",[Reason]),
     {stop, Reason, State};
-
-handle_info({'EXIT',RemotePid,normal}, #state{remote_pid=RemotePid}=State) ->
+handle_info({'EXIT',_RemotePid,normal}, State) ->
     {stop, normal, State};
-handle_info({'EXIT',RemotePid,Reason}, #state{remote_pid=RemotePid}=State) ->
+handle_info({'EXIT',_RemotePid,Reason}, State) ->
     ?DEBUG("exit:~p",[Reason]),
     {stop, normal, State}.
 

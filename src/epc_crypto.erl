@@ -12,9 +12,7 @@ encrypt(Key, Binary) ->
     BinaryLength = byte_size(Binary),
     Rem = (BinaryLength + 4) rem ?DATA_LENGTH,
     AdditionalLength = ?DATA_LENGTH - Rem,
-
     FinalBinary = <<BinaryLength:32/integer-big, Binary/binary, 0:AdditionalLength/unit:8>>,
-
     crypto:block_encrypt(aes_cbc128, Key, ?IV, FinalBinary).
 
 
