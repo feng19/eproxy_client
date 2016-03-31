@@ -5,13 +5,15 @@
 
 -export([ init/2, websocket_handle/3, websocket_info/3, websocket_terminate/3 ]).
 -export([
-    start_link/1,
+    start_link/0, start_link/1,
     send/2
 ]).
 
 -record(state, {key, link_pid}).
 
 %% ===================================================================
+start_link() ->
+    start_link(self()).
 start_link(LinkPid) ->
 %%     {ok, Key} = application:get_env(eproxy_client, key),
 %%     {ok, RemoteAddr} = application:get_env(eproxy_client, remote_addr),

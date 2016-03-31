@@ -1,8 +1,6 @@
-.project
 .idea
 *.iml
 /.rebar
-/.settings
 /deps
 /ebin
 *~
@@ -11,3 +9,4 @@ client.config
 /.erlang.mk
 /_rel
 relx
+epc

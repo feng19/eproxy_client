@@ -18,32 +18,52 @@ init([LSock]) ->
     process_flag(trap_exit, true),
     {ok, #state{lsock = LSock}, 0}.
 
-handle_call(_Request, _From, State) ->
+handle_call(Request, _From, State) ->
+    ?DEBUG("call Request:~p",[Request]),
     {reply, ok, State}.
 
-handle_cast(close, State) ->
-    ?DEBUG("close"),
-    {stop, normal, State}.
+handle_cast(Info, State) ->
+    ?DEBUG("cast info:~p",[Info]),
+    {noreply, State}.
 
-handle_info({tcp, Socket, Request}, #state{socket=Socket,remote_pid=undefined} = State) ->
-%%     ?DEBUG(Request),
-    case connect_to_remote(Socket,Request,2) of
-        {ok, RemotePid} ->
-            ok = inet:setopts(Socket, [{active, once}]),
-            {noreply, State#state{remote_pid=RemotePid}, ?TIMEOUT};
+handle_info({tcp, Socket, Request}, #state{remote_pid=undefined} = State) ->
+%%    ?DEBUG("tcp Request:~p",[Request]),
+    case parse_request(Request) of
+        {http, Target, NormalizedReqeust} ->
+            case start_process(2) of
+                {ok, RemotePid} ->
+                    epc_ws_handler:send(RemotePid,Target),
+                    epc_ws_handler:send(RemotePid,NormalizedReqeust),
+                    ok = inet:setopts(Socket, [{active, once}]),
+                    {noreply, State#state{remote_pid=RemotePid}, ?TIMEOUT};
+                {error, Error} ->
+                    ?DEBUG("error stop:~p",[Error]),
+                    {stop, normal, State}
+            end;
+        {connect,Target} ->
+            case start_process(2) of
+                {ok, RemotePid} ->
+                    epc_ws_handler:send(RemotePid,Target),
+                    gen_tcp:send(Socket, <<"HTTP/1.1 200 Connection Established\r\n\r\n">>),
+                    ok = inet:setopts(Socket, [{active, once}]),
+                    {noreply, State#state{remote_pid=RemotePid}, ?TIMEOUT};
+                {error, Error} ->
+                    ?DEBUG("error stop:~p",[Error]),
+                    {stop, normal, State}
+            end;
         {error, Error} ->
             ?DEBUG("error stop:~p",[Error]),
-            {stop, Error, State}
+            {stop, normal, State}
     end;
-handle_info({tcp, Socket, Request}, #state{socket=Socket,remote_pid=RemotePid} = State) ->
-%%     ?DEBUG(Request),
+handle_info({tcp, Socket, Request}, #state{remote_pid=RemotePid} = State) ->
+%%    ?DEBUG("tcp Request:~p",[Request]),
     epc_ws_handler:send(RemotePid,Request),
+    ok = inet:setopts(Socket, [{active, once}]),
     {noreply, State, ?TIMEOUT};
 %% recv from remote, and send back to client
-handle_info({websocket_msg,Response}, #state{socket=Client} = State) ->
-    case gen_tcp:send(Client, Response) of
+handle_info({websocket_msg,Response}, #state{socket=Socket} = State) ->
+    case gen_tcp:send(Socket, Response) of
         ok ->
-            ok = inet:setopts(Client, [{active, once}]),
             {noreply, State, ?TIMEOUT};
         {error, Error} ->
             ?DEBUG("error stop:~p",[Error]),
@@ -52,9 +72,10 @@ handle_info({websocket_msg,Response}, #state{socket=Client} = State) ->
 handle_info(timeout, #state{lsock = LSock, socket = undefined} = State) ->
     {ok, Socket} = gen_tcp:accept(LSock),
     epc_http_sup:start_child(),
+    ok = inet:setopts(Socket, [{active, once}]),
     {noreply, State#state{socket = Socket}, ?TIMEOUT};
 handle_info(timeout, State) ->
-%%     ?DEBUG("timeout stop"),
+    ?DEBUG("timeout stop State:~p",[State]),
     {stop, normal, State};
 handle_info({tcp_closed, _}, State) ->
     ?DEBUG("tcp_closed stop"),
@@ -68,8 +89,8 @@ handle_info({'EXIT',_RemotePid,Reason}, State) ->
     ?DEBUG("exit:~p",[Reason]),
     {stop, normal, State}.
 
-terminate(Reason, #state{socket=Socket}) ->
-    ?DEBUG("terminate:~p",[Reason]),
+terminate(_Reason, #state{socket=Socket}) ->
+%%    ?DEBUG("terminate:~p",[Reason]),
     case is_port(Socket) of
         true -> 
             gen_tcp:close(Socket);
@@ -83,23 +104,12 @@ code_change(_OldVsn, State, _Extra) ->
 
 %%%===================================================================
 
-connect_to_remote(Socket,Request,N) ->
-    case epc_ws_handler:start_link(self()) of
+start_process(N) ->
+    case epc_ws_handler:start_link() of
         {ok, RemotePid} ->
-            case parse_request(Request) of
-                {http, Target, NormalizedReqeust} ->
-                    epc_ws_handler:send(RemotePid,Target),
-                    epc_ws_handler:send(RemotePid,NormalizedReqeust),
-                    {ok,RemotePid};
-                {connect,Target} ->
-                    epc_ws_handler:send(RemotePid,Target),
-                    gen_tcp:send(Socket, <<"HTTP/1.1 200 Connection Established\r\n\r\n">>),
-                    {ok,RemotePid};
-                {error, Reason} ->
-                    {error, Reason}
-            end;
+            {ok, RemotePid};
         {error, timeout} when N=/=0 ->
-            connect_to_remote(Socket,Request,N-1);
+            start_process(N-1);
         {error, Error} ->
             {error, Error}
     end.
