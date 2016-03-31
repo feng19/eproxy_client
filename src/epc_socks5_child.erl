@@ -61,14 +61,9 @@ handle_info({tcp, Socket, Request}, #state{status = 2} = State) ->
             {stop, normal, State}
     end;
 %% recv from remote, and send back to client
-handle_info({websocket_msg, Response}, #state{socket=Socket} = State) ->
-    case gen_tcp:send(Socket, Response) of
-        ok ->
-            {noreply, State, ?TIMEOUT};
-        {error, Error} ->
-            ?DEBUG("error stop:~p",[Error]),
-            {stop, normal, State}
-    end;
+handle_info({websocket_msg, Response}, State) ->
+    gen_tcp:send(State#state.socket, Response),
+    {noreply, State};
 handle_info(timeout, #state{lsock=LSock,socket=undefined} = State) ->
     {ok, Socket} = gen_tcp:accept(LSock),
     epc_socks5_sup:start_child(),
