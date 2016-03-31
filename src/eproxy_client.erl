@@ -13,7 +13,7 @@ main(_) ->
             stop
     end.
 start() ->
-    application:ensure_all_started(eproxy_client).
+    application:ensure_all_started(?MODULE).
 
 -ifdef(debug).
 

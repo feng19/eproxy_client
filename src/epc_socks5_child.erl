@@ -63,7 +63,7 @@ handle_info({tcp, Socket, Request}, #state{status = 2} = State) ->
 %% recv from remote, and send back to client
 handle_info({websocket_msg, Response}, State) ->
     gen_tcp:send(State#state.socket, Response),
-    {noreply, State};
+    {noreply, State, ?TIMEOUT};
 handle_info(timeout, #state{lsock=LSock,socket=undefined} = State) ->
     {ok, Socket} = gen_tcp:accept(LSock),
     epc_socks5_sup:start_child(),
