@@ -10,4 +10,5 @@ client.config
 /_rel
 relx
 epc
+epc.zip
 _build
