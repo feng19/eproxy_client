@@ -11,6 +11,8 @@
     reload_remote_addr_list/0
 ]).
 
+-include("epc.hrl").
+
 -record(state, {len=0,now=1}).
 
 %% ====================================================================
@@ -24,9 +26,10 @@ get_remote_addr_list() ->
         {ok, RemoteAddrList0} ->
             RemoteAddrList0;
         _ ->
-            {ok, Key} = application:get_env(eproxy_client, key),
             {ok, RemoteAddr} = application:get_env(eproxy_client, remote_addr),
-            [{RemoteAddr,Key}]
+            {ok, EncryptType} = application:get_env(eproxy_client, encrypt_type, ?FIRST_ENCRYPT),
+            {ok, Key} = application:get_env(eproxy_client, key),
+            [{RemoteAddr, EncryptType, Key}]
     end.
 
 get_remote_addr() ->
@@ -70,17 +73,17 @@ code_change(_OldVsn, State, _Extra) ->
 
 set_remote_addr_list(RemoteAddrList) ->
     lists:foldl(
-        fun({RemoteAddr0,Key0},N) ->
+        fun({RemoteAddr0, EncryptType, Key0},N) ->
             case {check_url(RemoteAddr0), check_key(Key0)} of
                 {{ok, RemoteAddr}, {ok, Key}} ->
                     NewN = N+1,
-                    put(NewN,{RemoteAddr, Key}),
+                    put(NewN,{RemoteAddr, EncryptType, Key}),
                     NewN;
                 {{error,Error}, _} ->
-                    io:format("url:~p key:~p,url error:~p~n",[RemoteAddr0, Key0, Error]),
+                    io:format("url:~p encrypt_type:~p key:~p,url error:~p~n",[RemoteAddr0, EncryptType, Key0, Error]),
                     N;
                 {_, {error,Error}} ->
-                    io:format("url:~p key:~p,key error:~p~n",[RemoteAddr0, Key0, Error]),
+                    io:format("url:~p encrypt_type:~p key:~p,key error:~p~n",[RemoteAddr0, EncryptType, Key0, Error]),
                     N
             end
         end, 0, RemoteAddrList).

@@ -3,9 +3,10 @@
     eproxy_client,
     [
         {remote_addr_list,[
-            % eg: {remote_addr,key}
-            {"ws://yourappname.herokuapp.com/ws","hehe123654001122"}
-            %{"ws://127.0.0.1:9090/ws","hehe123654001122"}
+            % encrypt_type : 1-no encrypt packet 2-just encrypt first packet 3-encrypt all packet
+            % eg: {remote_addr, encrypt_type, key}
+            {"ws://yourappname.herokuapp.com/ws", 2,"hehe123654001122"}
+            %{"ws://127.0.0.1:9090/ws", 2,"hehe123654001122"}
         ]},
         {local_socks5_port, 7070},
         {local_socks4_port, 7171},

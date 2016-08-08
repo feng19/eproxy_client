@@ -12,9 +12,9 @@
 start(_StartType, _StartArgs) ->
     case epc_sup:start_link() of
         {ok, Pid} ->
-            epc_sup:start_child(socks5),
-            epc_sup:start_child(socks4),
-            epc_sup:start_child(http),
+            epc_sup:start_child(local_socks4_port, epc_socks4_sup),
+            epc_sup:start_child(local_socks5_port, epc_socks5_sup),
+            epc_sup:start_child(local_http_port, epc_http_sup),
             io:format("eproxy client start succeed~n"),
             {ok, Pid};
         Other ->

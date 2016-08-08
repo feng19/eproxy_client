@@ -28,7 +28,7 @@ handle_cast(Info, State) ->
 %% recv from client, and send to remote
 handle_info({tcp, Socket, Request}, #state{remote_pid=RemotePid, status = 3} = State) ->
 %%    ?DEBUG("tcp Request:~p",[Request]),
-    epc_ws_handler:send(RemotePid,Request),
+    epc_ws_handler:send(RemotePid, Request),
     ok = inet:setopts(Socket, [{active, once}]),
     {noreply, State, ?TIMEOUT};
 handle_info({tcp, Socket, Request}, #state{status = 1} = State) ->
@@ -91,8 +91,7 @@ terminate(_Reason, #state{socket=Socket}) ->
             gen_tcp:close(Socket);
         false -> 
             ok
-    end,
-    ok.
+    end.
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
@@ -102,7 +101,7 @@ code_change(_OldVsn, State, _Extra) ->
 start_process(Socket, Target, N) ->
     case epc_ws_handler:start_link() of
         {ok, RemotePid} ->
-            epc_ws_handler:send(RemotePid,Target),
+            epc_ws_handler:send_head(RemotePid, Target),
             ok = gen_tcp:send(Socket, <<5,0,0,1,0,0,0,0,0,0>>),
             {ok, RemotePid};
         {error, timeout} when N=/=0 ->

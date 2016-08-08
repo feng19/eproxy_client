@@ -32,8 +32,8 @@ handle_info({tcp, Socket, Request}, #state{remote_pid=undefined} = State) ->
         {http, Target, NormalizedReqeust} ->
             case start_process(2) of
                 {ok, RemotePid} ->
-                    epc_ws_handler:send(RemotePid,Target),
-                    epc_ws_handler:send(RemotePid,NormalizedReqeust),
+                    epc_ws_handler:send_head(RemotePid, Target),
+                    epc_ws_handler:send(RemotePid, NormalizedReqeust),
                     ok = inet:setopts(Socket, [{active, once}]),
                     {noreply, State#state{remote_pid=RemotePid}, ?TIMEOUT};
                 {error, Error} ->
@@ -43,7 +43,7 @@ handle_info({tcp, Socket, Request}, #state{remote_pid=undefined} = State) ->
         {connect,Target} ->
             case start_process(2) of
                 {ok, RemotePid} ->
-                    epc_ws_handler:send(RemotePid,Target),
+                    epc_ws_handler:send_head(RemotePid, Target),
                     gen_tcp:send(Socket, <<"HTTP/1.1 200 Connection Established\r\n\r\n">>),
                     ok = inet:setopts(Socket, [{active, once}]),
                     {noreply, State#state{remote_pid=RemotePid}, ?TIMEOUT};
@@ -57,7 +57,7 @@ handle_info({tcp, Socket, Request}, #state{remote_pid=undefined} = State) ->
     end;
 handle_info({tcp, Socket, Request}, #state{remote_pid=RemotePid} = State) ->
 %%    ?DEBUG("tcp Request:~p",[Request]),
-    epc_ws_handler:send(RemotePid,Request),
+    epc_ws_handler:send(RemotePid, Request),
     ok = inet:setopts(Socket, [{active, once}]),
     {noreply, State, ?TIMEOUT};
 %% recv from remote, and send back to client
