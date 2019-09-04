@@ -1,7 +1,7 @@
 
 PROJECT = eproxy_client
 DEPS = websocket_client
-dep_websocket_client = git https://github.com/jeremyong/websocket_client v0.7
+dep_websocket_client = git https://github.com/jeremyong/websocket_client master
 
 #ERLC_OPTS += -Ddebug
 #ERLC_OPTS += +debug_info

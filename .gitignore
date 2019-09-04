@@ -12,3 +12,4 @@ relx
 epc
 epc.zip
 _build
+erl_crash.dump
